@@ -1,8 +1,10 @@
-package app.lawnchair.samsung
+package com.android.launcher3.samsung
 
 import android.graphics.Rect
+import app.lawnchair.samsung.SamsungAnimationDiagnostics
+import app.lawnchair.samsung.SamsungAnimationSpec
+import app.lawnchair.samsung.SamsungLaunchAnimationController
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -25,7 +27,6 @@ class SamsungAnimationEngineTest {
         assertEquals(0.0f, launchInterpolator.getInterpolation(0.0f), 0.001f)
         assertEquals(1.0f, launchInterpolator.getInterpolation(1.0f), 0.001f)
         
-        // Midpoint should follow cubic bezier progression
         val mid = launchInterpolator.getInterpolation(0.5f)
         assertTrue(mid in 0.4f..0.95f)
     }
@@ -41,9 +42,8 @@ class SamsungAnimationEngineTest {
     @Test
     fun testDiagnosticsEventLogging() {
         SamsungAnimationDiagnostics.logTransitionStart(
-            type = "LAUNCH",
-            source = "workspace_icon",
-            target = "com.sec.android.app.camera"
+            transitionType = "LAUNCH",
+            targetInfo = "com.sec.android.app.camera"
         )
 
         SamsungAnimationDiagnostics.logFrameDrop(
@@ -53,13 +53,13 @@ class SamsungAnimationEngineTest {
         )
 
         SamsungAnimationDiagnostics.logTransitionEnd(
-            type = "LAUNCH",
-            success = true,
-            totalDurationMs = 380L
+            transitionType = "LAUNCH",
+            durationMs = 380L
         )
 
         val stats = SamsungAnimationDiagnostics.getPerformanceSummary()
         assertNotNull(stats)
+        assertTrue((stats["totalTransitions"] as? Int ?: 0) >= 1)
     }
 
     @Test

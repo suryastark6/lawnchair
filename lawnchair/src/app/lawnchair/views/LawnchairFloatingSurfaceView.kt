@@ -27,6 +27,8 @@ import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
 import app.lawnchair.LawnchairLauncher
 import app.lawnchair.launcher
+import app.lawnchair.samsung.SamsungAnimationDiagnostics
+import app.lawnchair.samsung.SamsungAnimationSpec
 import com.android.app.animation.Interpolators
 import com.android.launcher3.AbstractFloatingView
 import com.android.launcher3.CellLayout
@@ -80,13 +82,19 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
     }
 
     override fun handleClose(animate: Boolean) {
+        mIcon?.apply {
+            translationX = 0f
+            translationY = 0f
+            scaleX = 1f
+            scaleY = 1f
+        }
         setCurrentIconVisible(true)
         mLauncher.viewCache.recycleView(R.layout.floating_surface_view, this)
         mContract = null
         mIcon = null
         mIsOpen = false
 
-        // Remove after some time, to avoid flickering
+        // Remove after a single frame to avoid flickering
         Executors.MAIN_EXECUTOR.handler.postDelayed(
             mRemoveViewRunnable,
             mLauncher.getSingleFrameMs().toLong(),
@@ -102,7 +110,6 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
     }
 
     private fun removeViewImmediate() {
-        // Cancel any pending remove
         Executors.MAIN_EXECUTOR.handler.removeCallbacks(mRemoveViewRunnable)
         if (isAttachedToWindow) {
             removeViewFromParent()
@@ -146,8 +153,8 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
             Consumer { view: View? ->
                 val scaleAnim =
                     ObjectAnimator.ofFloat<View?>(view, LauncherAnimUtils.SCALE_PROPERTY, *scales)
-                        .setDuration(CONTENT_SCALE_DURATION.toLong() * 3)
-                scaleAnim.interpolator = Interpolators.DECELERATE_1_5
+                        .setDuration(SamsungAnimationSpec.DURATION_HOME_REVEAL_MS)
+                scaleAnim.interpolator = SamsungAnimationSpec.RETURN_INTERPOLATOR
                 launcherAnimator.play(scaleAnim)
             },
         )
@@ -215,8 +222,8 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
             MultiPropertyFactory.MULTI_PROPERTY_VALUE,
             targetDepth,
         ).apply {
-            duration = CONTENT_SCALE_DURATION.toLong() * 2
-            interpolator = Interpolators.DECELERATE_2
+            duration = SamsungAnimationSpec.RETURN_DURATION_MS
+            interpolator = SamsungAnimationSpec.RETURN_INTERPOLATOR
             onEnd?.let {
                 addListener(
                     object : AnimatorListenerAdapter() {
@@ -232,6 +239,12 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         getViewTreeObserver().removeOnGlobalLayoutListener(this)
+        mIcon?.apply {
+            translationX = 0f
+            translationY = 0f
+            scaleX = 1f
+            scaleY = 1f
+        }
         setCurrentIconVisible(true)
     }
 
@@ -240,10 +253,15 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
     }
 
     fun getIcon(): View? {
-        return mLauncher.getFirstHomeElementForAppClose(
-            null, /* StableViewInfo */
-            mContract!!.componentName.packageName,
-            mContract!!.user,
+        val contract = mContract ?: return null
+        return mLauncher.getFirstVisibleElementForAppClose(
+            null,
+            contract.componentName.packageName,
+            contract.user,
+        ) ?: mLauncher.getFirstHomeElementForAppClose(
+            null,
+            contract.componentName.packageName,
+            contract.user,
         )
     }
 
@@ -259,6 +277,12 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
 
             val iconChanged = mIcon !== icon
             if (iconChanged) {
+                mIcon?.apply {
+                    translationX = 0f
+                    translationY = 0f
+                    scaleX = 1f
+                    scaleY = 1f
+                }
                 setCurrentIconVisible(true)
                 mIcon = icon
                 setCurrentIconVisible(false)
@@ -266,16 +290,29 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
 
             if (icon != null) {
                 getLocationBoundsForView(mLauncher, icon, false, mTmpPosition, mIconBounds)
-                if (mTmpPosition != mIconPosition) {
+                if (mTmpPosition != mIconPosition && !mTmpPosition.isEmpty) {
                     mIconPosition.set(mTmpPosition)
                     updateSurfaceViewLayout()
                 }
+            } else {
+                // Fallback to screen center target if icon is not currently bound on workspace
+                val iconSize = mDeviceProfile.iconSizePx.toFloat()
+                val centerX = mLauncher.dragLayer.width / 2f
+                val centerY = mLauncher.dragLayer.height / 2f
+                mIconPosition.set(
+                    centerX - iconSize / 2f,
+                    centerY - iconSize / 2f,
+                    centerX + iconSize / 2f,
+                    centerY + iconSize / 2f,
+                )
+                mIconBounds.set(0, 0, iconSize.toInt(), iconSize.toInt())
+                updateSurfaceViewLayout()
             }
 
             sendIconInfo()
 
             if (mIcon != null && iconChanged && !mIconBounds.isEmpty) {
-                if (mIconBitmap == null || mIconBitmap!!.getWidth() != mIconBounds.width() || mIconBitmap!!.getHeight() != mIconBounds.height()) {
+                if (mIconBitmap == null || mIconBitmap!!.width != mIconBounds.width() || mIconBitmap!!.height != mIconBounds.height()) {
                     if (mIconBitmap != null) mIconBitmap!!.recycle()
                     mIconBitmap = createBitmap(
                         mIconBounds.width(),
@@ -306,6 +343,7 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
             lp.height = mIconPosition.height().roundToInt()
             lp.leftMargin = mIconPosition.left.roundToInt()
             lp.topMargin = mIconPosition.top.roundToInt()
+            mSurfaceView.layoutParams = lp
         }
     }
 
@@ -324,27 +362,43 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
     }
 
     private fun bouncyIcon() {
-        mIcon ?: return
+        val targetIcon = mIcon ?: return
 
-        val (startX, startY) = mIconPosition.left to mIconPosition.top - ((height * 0.2f) / 3)
+        targetIcon.scaleX = 0.94f
+        targetIcon.scaleY = 0.94f
+        targetIcon.translationY = -12f
 
         listOf(
-            SpringAnimation(mIcon, DynamicAnimation.TRANSLATION_X, 1f).apply {
-                spring = SpringForce(1f).setStiffness(SpringForce.STIFFNESS_LOW)
-                    .setDampingRatio(SpringForce.DAMPING_RATIO_HIGH_BOUNCY)
-                setStartVelocity((mIconPosition.left - startX) * 2)
+            SpringAnimation(targetIcon, DynamicAnimation.SCALE_X, 1f).apply {
+                spring = SpringForce(1f)
+                    .setStiffness(SamsungAnimationSpec.SPRING_STIFFNESS)
+                    .setDampingRatio(SamsungAnimationSpec.SPRING_DAMPING_RATIO)
             },
-            SpringAnimation(mIcon, DynamicAnimation.TRANSLATION_Y, 1f).apply {
-                spring = SpringForce(1f).setStiffness(SpringForce.STIFFNESS_LOW)
-                    .setDampingRatio(SpringForce.DAMPING_RATIO_HIGH_BOUNCY)
-                setStartVelocity((mIconPosition.top - startY) * 3)
+            SpringAnimation(targetIcon, DynamicAnimation.SCALE_Y, 1f).apply {
+                spring = SpringForce(1f)
+                    .setStiffness(SamsungAnimationSpec.SPRING_STIFFNESS)
+                    .setDampingRatio(SamsungAnimationSpec.SPRING_DAMPING_RATIO)
+            },
+            SpringAnimation(targetIcon, DynamicAnimation.TRANSLATION_Y, 0f).apply {
+                spring = SpringForce(0f)
+                    .setStiffness(SamsungAnimationSpec.SPRING_STIFFNESS)
+                    .setDampingRatio(SamsungAnimationSpec.SPRING_DAMPING_RATIO)
             },
         ).forEach { it.start() }
     }
 
     private fun sendIconInfo() {
         if (mContract != null && Utilities.ATLEAST_Q) {
-            mContract!!.sendEndPosition(mIconPosition, mLauncher, mSurfaceView.surfaceControl)
+            val screenPosition = RectF(mIconPosition)
+            val dragLayerLocation = IntArray(2)
+            mLauncher.dragLayer.getLocationOnScreen(dragLayerLocation)
+            screenPosition.offset(dragLayerLocation[0].toFloat(), dragLayerLocation[1].toFloat())
+
+            SamsungAnimationDiagnostics.logTransitionStart(
+                "GNC_SEND_END_POSITION",
+                "Screen: (${screenPosition.left}, ${screenPosition.top}, ${screenPosition.right}, ${screenPosition.bottom})",
+            )
+            mContract!!.sendEndPosition(screenPosition, mLauncher, mSurfaceView.surfaceControl)
         }
     }
 
@@ -413,7 +467,7 @@ class LawnchairFloatingSurfaceView @JvmOverloads constructor(
             anim.addListener(
                 object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator) {
-                        launcherContentAnimator.second!!.run()
+                        launcherContentAnimator.second?.run()
                     }
                 },
             )

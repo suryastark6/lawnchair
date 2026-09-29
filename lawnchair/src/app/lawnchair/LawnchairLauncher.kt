@@ -51,6 +51,7 @@ import app.lawnchair.ui.popup.LawnchairShortcut
 import app.lawnchair.util.getThemedIconPacksInstalled
 import app.lawnchair.util.unsafeLazy
 import app.lawnchair.views.LawnchairFloatingSurfaceView
+import app.lawnchair.samsung.SamsungAnimationDiagnostics
 import app.lawnchair.samsung.SamsungTransitionEngine
 import com.android.launcher3.AbstractFloatingView
 import com.android.launcher3.BaseActivity
@@ -332,19 +333,14 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun handleGestureContract(intent: Intent) {
-        if (samsungTransitionEngine.isEnabled && samsungTransitionEngine.onNewIntent(intent)) {
-            return
-        }
-        if (!LawnchairApp.isRecentsEnabled && prefs.enableGnc.get()) {
-            val gnc = GestureNavContract.fromIntent(intent)
-            if (gnc != null) {
-                AbstractFloatingView.closeOpenViews(
-                    this,
-                    false,
-                    AbstractFloatingView.TYPE_ICON_SURFACE,
-                )
-                LawnchairFloatingSurfaceView.show(this, gnc)
-            }
+        val gnc = GestureNavContract.fromIntent(intent)
+        if (gnc != null) {
+            AbstractFloatingView.closeOpenViews(
+                this,
+                false,
+                AbstractFloatingView.TYPE_ICON_SURFACE,
+            )
+            LawnchairFloatingSurfaceView.show(this, gnc)
         }
     }
 
@@ -432,12 +428,10 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun getActivityLaunchOptions(v: View?, item: ItemInfo?): ActivityOptionsWrapper {
-        if (samsungTransitionEngine.isEnabled) {
-            val samsungOptions = samsungTransitionEngine.getActivityLaunchOptions(v, item)
-            if (samsungOptions != null) {
-                return samsungOptions
-            }
-        }
+        SamsungAnimationDiagnostics.logTransitionStart(
+            "APP_LAUNCH",
+            v?.javaClass?.simpleName ?: "null",
+        )
         return runCatching {
             super.getActivityLaunchOptions(v, item)
         }.getOrElse {
