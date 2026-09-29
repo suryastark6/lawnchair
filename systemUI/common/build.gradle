@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    buildToolsVersion "37.0.0"
+    buildToolsVersion "36.0.0"
     namespace "com.android.systemui.common"
 
     sourceSets {

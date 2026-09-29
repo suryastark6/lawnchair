@@ -51,6 +51,7 @@ import app.lawnchair.ui.popup.LawnchairShortcut
 import app.lawnchair.util.getThemedIconPacksInstalled
 import app.lawnchair.util.unsafeLazy
 import app.lawnchair.views.LawnchairFloatingSurfaceView
+import app.lawnchair.samsung.SamsungTransitionEngine
 import com.android.launcher3.AbstractFloatingView
 import com.android.launcher3.BaseActivity
 import com.android.launcher3.BubbleTextView
@@ -96,6 +97,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class LawnchairLauncher : QuickstepLauncher() {
+    private val samsungTransitionEngine by unsafeLazy { SamsungTransitionEngine(this) }
     private val defaultOverlay by unsafeLazy { OverlayCallbackImpl(this) }
     private val prefs by unsafeLazy { PreferenceManager.getInstance(this) }
     private val preferenceManager2 by unsafeLazy { PreferenceManager2.getInstance(this) }
@@ -330,6 +332,9 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun handleGestureContract(intent: Intent) {
+        if (samsungTransitionEngine.isEnabled && samsungTransitionEngine.onNewIntent(intent)) {
+            return
+        }
         if (!LawnchairApp.isRecentsEnabled && prefs.enableGnc.get()) {
             val gnc = GestureNavContract.fromIntent(intent)
             if (gnc != null) {
@@ -427,6 +432,12 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun getActivityLaunchOptions(v: View?, item: ItemInfo?): ActivityOptionsWrapper {
+        if (samsungTransitionEngine.isEnabled) {
+            val samsungOptions = samsungTransitionEngine.getActivityLaunchOptions(v, item)
+            if (samsungOptions != null) {
+                return samsungOptions
+            }
+        }
         return runCatching {
             super.getActivityLaunchOptions(v, item)
         }.getOrElse {

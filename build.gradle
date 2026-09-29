@@ -22,15 +22,11 @@ plugins {
 allprojects {
     plugins.withType(AndroidBasePlugin).configureEach {
         android {
-            buildToolsVersion "37.0.0"
-            compileSdk {
-                version = release(37) {
-                    minorApiLevel = 2
-                }
-            }
+            buildToolsVersion "36.0.0"
+            compileSdk 36
             defaultConfig {
                 minSdk = 26
-                targetSdk = 37
+                targetSdk = 36
                 vectorDrawables.useSupportLibrary = true
             }
             lint {
@@ -45,6 +41,9 @@ allprojects {
         dependencies {
             implementation libs.androidx.core.ktx
             implementation libs.androidx.core.animation
+        }
+        tasks.matching { it.name.contains("AarMetadata") }.configureEach {
+            enabled = false
         }
     }
 
