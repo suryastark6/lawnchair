@@ -83,4 +83,23 @@ class SamsungLaunchAnimationController(private val launcher: LawnchairLauncher) 
 
         return ActivityOptionsWrapper(options, callbacks)
     }
+
+    companion object {
+        /**
+         * Calculates intermediate reveal bounds during continuous squircle expansion.
+         */
+        fun calculateRevealBounds(
+            sourceBounds: Rect,
+            progress: Float,
+            screenWidth: Int,
+            screenHeight: Int
+        ): Rect {
+            val clampedProgress = progress.coerceIn(0.0f, 1.0f)
+            val left = (sourceBounds.left * (1.0f - clampedProgress)).toInt()
+            val top = (sourceBounds.top * (1.0f - clampedProgress)).toInt()
+            val right = (sourceBounds.right + (screenWidth - sourceBounds.right) * clampedProgress).toInt()
+            val bottom = (sourceBounds.bottom + (screenHeight - sourceBounds.bottom) * clampedProgress).toInt()
+            return Rect(left, top, right, bottom)
+        }
+    }
 }

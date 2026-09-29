@@ -34,7 +34,10 @@ object SamsungAnimationSpec {
     // --- Durations (ms) ---
 
     const val DURATION_APP_LAUNCH_MS: Long = 380L
+    const val LAUNCH_DURATION_MS: Long = 380L
     const val DURATION_APP_CLOSE_MS: Long = 340L
+    const val RETURN_DURATION_MS: Long = 320L
+    const val RECENTS_DURATION_MS: Long = 280L
     const val DURATION_HOME_REVEAL_MS: Long = 360L
     const val DURATION_ICON_BOUNCE_MS: Long = 400L
 
@@ -44,11 +47,13 @@ object SamsungAnimationSpec {
      * Spring stiffness for icon settling motion on One UI 8.
      */
     const val SPRING_STIFFNESS_ONEUI: Float = 300.0f
+    const val SPRING_STIFFNESS: Float = 300.0f
 
     /**
      * Damping ratio for critically damped settling without excessive oscillation.
      */
     const val SPRING_DAMPING_ONEUI: Float = 0.86f
+    const val SPRING_DAMPING_RATIO: Float = 0.86f
 
     // --- Corner Radii & Morphing ---
 
