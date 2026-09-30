@@ -140,7 +140,13 @@ class SamsungLaunchAnimationController(private val launcher: LawnchairLauncher) 
             options.splashScreenStyle = SplashScreen.SPLASH_SCREEN_STYLE_ICON
         }
 
-        options.setLaunchBounds(startScreenBounds)
+        // Force full-screen windowing mode (WINDOWING_MODE_FULLSCREEN = 1)
+        // Never call setLaunchBounds() here as Samsung One UI interprets launch bounds as a pop-up / freeform request.
+        runCatching {
+            val method = ActivityOptions::class.java.getMethod("setLaunchWindowingMode", Int::class.javaPrimitiveType)
+            method.invoke(options, 1)
+        }
+
         options.launchDisplayId = source.display?.displayId ?: Display.DEFAULT_DISPLAY
 
         val callbacks = RunnableList()

@@ -5,6 +5,7 @@ import android.view.View
 import app.lawnchair.LawnchairLauncher
 import com.android.launcher3.model.data.ItemInfo
 import com.android.launcher3.util.ActivityOptionsWrapper
+import java.lang.ref.WeakReference
 
 /**
  * Main entry point for Samsung One UI 8 transition management in Lawnchair.
@@ -15,6 +16,10 @@ class SamsungTransitionEngine(private val launcher: LawnchairLauncher) {
     val capabilities: SamsungTransitionCapabilities = SamsungTransitionCapabilities
     val launchController by lazy { SamsungLaunchAnimationController(launcher) }
     val returnController by lazy { SamsungReturnAnimationController(launcher) }
+
+    init {
+        activeEngine = WeakReference(this)
+    }
 
     /**
      * True if Samsung-specific animation pipeline is enabled and supported on this hardware.
@@ -36,5 +41,20 @@ class SamsungTransitionEngine(private val launcher: LawnchairLauncher) {
     fun onNewIntent(intent: Intent): Boolean {
         if (!isEnabled) return false
         return returnController.handleGestureContract(intent)
+    }
+
+    /**
+     * Dispatches real-time home return animation.
+     */
+    fun onHomeReturn(fromPackage: CharSequence?) {
+        returnController.playHomeReturnAnimation(fromPackage)
+    }
+
+    companion object {
+        private var activeEngine: WeakReference<SamsungTransitionEngine>? = null
+
+        fun notifyHomeReturn(fromPackage: CharSequence?) {
+            activeEngine?.get()?.onHomeReturn(fromPackage)
+        }
     }
 }

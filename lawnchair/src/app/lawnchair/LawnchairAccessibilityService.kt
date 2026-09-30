@@ -21,20 +21,23 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
 
+import android.util.Log
+import app.lawnchair.samsung.SamsungAnimationDiagnostics
+import app.lawnchair.samsung.SamsungTransitionEngine
+
 class LawnchairAccessibilityService : AccessibilityService() {
+
+    private var lastPackageName: CharSequence? = null
 
     override fun onServiceConnected() {
         serviceInfo = AccessibilityServiceInfo().apply {
-            // Set the type of events that this service wants to listen to.  Others
-            // won't be passed to this service.
-            eventTypes = 0
-
-            // If you only want this service to work with specific applications, set their
-            // package names here.  Otherwise, when the service is activated, it will listen
-            // to events from all applications.
-            packageNames = emptyArray()
+            eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOWS_CHANGED
+            feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
+            flags = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+            notificationTimeout = 50
         }
         lawnchairApp.accessibilityService = this
+        Log.i(TAG, "LawnchairAccessibilityService connected for real-time window & gesture coordination")
     }
 
     override fun onDestroy() {
@@ -46,5 +49,34 @@ class LawnchairAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {}
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event == null) return
+        val currentPackage = event.packageName?.toString() ?: return
+
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                val launcherPackage = packageName
+                val isToLauncher = currentPackage == launcherPackage
+                val isFromExternal = lastPackageName != null && lastPackageName != launcherPackage
+
+                if (isToLauncher && isFromExternal) {
+                    Log.d(TAG, "Real-time window transition to launcher detected from: $lastPackageName")
+                    SamsungAnimationDiagnostics.logTransitionStart(
+                        "A11Y_HOME_RETURN",
+                        "From: $lastPackageName -> To: $currentPackage",
+                    )
+                    SamsungTransitionEngine.notifyHomeReturn(lastPackageName)
+                }
+
+                lastPackageName = currentPackage
+            }
+            AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
+                // Window hierarchy change event for low-latency transition preparation
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "LawnchairA11yService"
+    }
 }
