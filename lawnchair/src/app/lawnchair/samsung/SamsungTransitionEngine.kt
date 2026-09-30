@@ -20,7 +20,7 @@ class SamsungTransitionEngine(private val launcher: LawnchairLauncher) {
      * True if Samsung-specific animation pipeline is enabled and supported on this hardware.
      */
     val isEnabled: Boolean
-        get() = capabilities.isSamsungDevice
+        get() = true
 
     /**
      * Intercepts and produces optimized ActivityOptions for app launching on Samsung devices.

@@ -429,10 +429,10 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun getActivityLaunchOptions(v: View?, item: ItemInfo?): ActivityOptionsWrapper {
-        SamsungAnimationDiagnostics.logTransitionStart(
-            "APP_LAUNCH",
-            v?.javaClass?.simpleName ?: "null",
-        )
+        val samsungOptions = samsungTransitionEngine.getActivityLaunchOptions(v, item)
+        if (samsungOptions != null) {
+            return samsungOptions
+        }
         return runCatching {
             super.getActivityLaunchOptions(v, item)
         }.getOrElse {
