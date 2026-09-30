@@ -52,6 +52,7 @@ import app.lawnchair.util.getThemedIconPacksInstalled
 import app.lawnchair.util.unsafeLazy
 import app.lawnchair.views.LawnchairFloatingSurfaceView
 import app.lawnchair.samsung.SamsungAnimationDiagnostics
+import app.lawnchair.samsung.SamsungAnimationSpec
 import app.lawnchair.samsung.SamsungTransitionEngine
 import com.android.launcher3.AbstractFloatingView
 import com.android.launcher3.BaseActivity
@@ -442,10 +443,9 @@ class LawnchairLauncher : QuickstepLauncher() {
     private fun getActivityLaunchOptionsDefault(v: View?): ActivityOptionsWrapper {
         var left = 0
         var top = 0
-        var width = v!!.measuredWidth
-        var height = v.measuredHeight
+        var width = v?.measuredWidth ?: 0
+        var height = v?.measuredHeight ?: 0
         if (v is BubbleTextView) {
-            // Launch from center of icon, not entire view
             val icon: Drawable? = v.icon
             if (icon != null) {
                 val bounds = icon.bounds
@@ -455,19 +455,36 @@ class LawnchairLauncher : QuickstepLauncher() {
                 height = bounds.height()
             }
         }
+        
+        v?.let {
+            it.animate()
+                .scaleX(0.88f)
+                .scaleY(0.88f)
+                .setDuration(120)
+                .withEndAction {
+                    it.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(220)
+                        .setInterpolator(SamsungAnimationSpec.LAUNCH_INTERPOLATOR)
+                        .start()
+                }
+                .start()
+        }
+
         val options = Utilities.allowBGLaunch(
-            ActivityOptions.makeClipRevealAnimation(
-                v,
+            ActivityOptions.makeScaleUpAnimation(
+                v ?: dragLayer,
                 left,
                 top,
-                width,
-                height,
+                width.coerceAtLeast(1),
+                height.coerceAtLeast(1),
             ),
         )
         if (Utilities.ATLEAST_T) {
             options.splashScreenStyle = SplashScreen.SPLASH_SCREEN_STYLE_ICON
         }
-        options.launchDisplayId = if (v.display != null) v.display.displayId else Display.DEFAULT_DISPLAY
+        options.launchDisplayId = if (v?.display != null) v.display.displayId else Display.DEFAULT_DISPLAY
         val callback = RunnableList()
         return ActivityOptionsWrapper(options, callback)
     }
