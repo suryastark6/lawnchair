@@ -15,6 +15,7 @@
  */
 package com.android.launcher3.uioverrides
 
+import app.lawnchair.samsung.SamsungAnimationSpec
 import com.android.app.animation.Interpolators.ACCELERATE_DECELERATE
 import com.android.app.animation.Interpolators.AGGRESSIVE_EASE_IN_OUT
 import com.android.app.animation.Interpolators.FINAL_FRAME
@@ -118,26 +119,26 @@ class RecentsViewStateController(private val launcher: QuickstepLauncher) :
             recentsView,
             RECENTS_SCALE_PROPERTY,
             scaleAndOffset[0],
-            config.getInterpolator(ANIM_OVERVIEW_SCALE, LINEAR),
+            config.getInterpolator(ANIM_OVERVIEW_SCALE, SamsungAnimationSpec.WORKSPACE_SCALE_INTERPOLATOR),
         )
         builder.setFloat(
             recentsView,
             ADJACENT_PAGE_HORIZONTAL_OFFSET,
             scaleAndOffset[1],
-            config.getInterpolator(ANIM_OVERVIEW_TRANSLATE_X, LINEAR),
+            config.getInterpolator(ANIM_OVERVIEW_TRANSLATE_X, SamsungAnimationSpec.RETURN_INTERPOLATOR),
         )
         builder.setFloat(
             recentsView,
             TASK_SECONDARY_TRANSLATION,
             0f,
-            config.getInterpolator(ANIM_OVERVIEW_TRANSLATE_Y, LINEAR),
+            config.getInterpolator(ANIM_OVERVIEW_TRANSLATE_Y, SamsungAnimationSpec.RETURN_INTERPOLATOR),
         )
 
         builder.setFloat(
             recentsView,
             CONTENT_ALPHA,
             if (toState.isRecentsViewVisible) 1f else 0f,
-            config.getInterpolator(ANIM_OVERVIEW_FADE, AGGRESSIVE_EASE_IN_OUT),
+            config.getInterpolator(ANIM_OVERVIEW_FADE, SamsungAnimationSpec.ALPHA_FADE_INTERPOLATOR),
         )
 
         builder.setFloat(

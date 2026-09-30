@@ -40,6 +40,7 @@ import com.android.quickstep.views.RecentsView;
 import com.android.quickstep.views.TaskView;
 
 import app.lawnchair.preferences.PreferenceManager;
+import app.lawnchair.samsung.SamsungAnimationSpec;
 import app.lawnchair.theme.color.tokens.ColorTokens;
 
 /**
@@ -47,9 +48,9 @@ import app.lawnchair.theme.color.tokens.ColorTokens;
  */
 public class OverviewState extends LauncherState {
 
-    private static final int OVERVIEW_SLIDE_IN_DURATION = 380;
-    private static final int OVERVIEW_POP_IN_DURATION = 250;
-    private static final int OVERVIEW_EXIT_DURATION = 250;
+    private static final int OVERVIEW_SLIDE_IN_DURATION = (int) SamsungAnimationSpec.DURATION_OVERVIEW_SLIDE_IN_MS;
+    private static final int OVERVIEW_POP_IN_DURATION = (int) SamsungAnimationSpec.DURATION_OVERVIEW_EXIT_MS;
+    private static final int OVERVIEW_EXIT_DURATION = (int) SamsungAnimationSpec.DURATION_OVERVIEW_EXIT_MS;
 
     protected static final Rect sTempRect = new Rect();
 
@@ -96,7 +97,7 @@ public class OverviewState extends LauncherState {
         } else {
             scale = (float) sTempRect.width() / deviceProfile.getCellLayoutWidth();
         }
-        float parallaxFactor = 0.5f;
+        float parallaxFactor = SamsungAnimationSpec.OVERVIEW_PARALLAX_FACTOR;
         return new ScaleAndTranslation(scale, 0, -getDefaultSwipeHeight(launcher) * parallaxFactor);
     }
 
@@ -107,7 +108,7 @@ public class OverviewState extends LauncherState {
 
     @Override
     public PageAlphaProvider getWorkspacePageAlphaProvider(Launcher launcher) {
-        return new PageAlphaProvider(DECELERATE_2) {
+        return new PageAlphaProvider(SamsungAnimationSpec.ALPHA_FADE_INTERPOLATOR) {
             @Override
             public float getPageAlpha(int pageIndex) {
                 return 0;

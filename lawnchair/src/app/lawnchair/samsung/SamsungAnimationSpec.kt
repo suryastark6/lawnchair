@@ -14,21 +14,25 @@ object SamsungAnimationSpec {
      * Samsung One UI 8 primary application launch motion curve.
      * Starts with rapid acceleration and settles smoothly into the full window bounds.
      */
+    @JvmField
     val LAUNCH_INTERPOLATOR: Interpolator = PathInterpolator(0.22f, 0.25f, 0.0f, 1.0f)
 
     /**
      * Samsung One UI 8 return-to-home deceleration curve.
      */
+    @JvmField
     val RETURN_INTERPOLATOR: Interpolator = PathInterpolator(0.17f, 0.17f, 0.0f, 1.0f)
 
     /**
      * Easing curve for workspace content scale and depth reveals during home transitions.
      */
+    @JvmField
     val WORKSPACE_SCALE_INTERPOLATOR: Interpolator = PathInterpolator(0.20f, 0.0f, 0.0f, 1.0f)
 
     /**
      * Alpha fade curve for icon surface concealment.
      */
+    @JvmField
     val ALPHA_FADE_INTERPOLATOR: Interpolator = PathInterpolator(0.33f, 0.0f, 0.67f, 1.0f)
 
     // --- Durations (ms) ---
@@ -40,6 +44,12 @@ object SamsungAnimationSpec {
     const val RECENTS_DURATION_MS: Long = 280L
     const val DURATION_HOME_REVEAL_MS: Long = 360L
     const val DURATION_ICON_BOUNCE_MS: Long = 400L
+    const val DURATION_OVERVIEW_SLIDE_IN_MS: Long = 320L
+    const val DURATION_OVERVIEW_EXIT_MS: Long = 280L
+
+    // --- Overview Motion Metrics ---
+    const val OVERVIEW_WORKSPACE_SCALE: Float = 0.92f
+    const val OVERVIEW_PARALLAX_FACTOR: Float = 0.40f
 
     // --- Spring Dynamics ---
 

@@ -68,6 +68,8 @@ import com.android.quickstep.util.RecentsAtomicAnimationFactory;
 import com.android.quickstep.util.SplitAnimationTimings;
 import com.android.quickstep.views.RecentsView;
 
+import app.lawnchair.samsung.SamsungAnimationSpec;
+
 /**
  * Animation factory for quickstep specific transitions
  */
@@ -120,9 +122,9 @@ public class QuickstepAtomicAnimationFactory extends
             config.setInterpolator(ANIM_SCRIM_FADE,
                     fromState == OVERVIEW_SPLIT_SELECT
                             ? clampToProgress(LINEAR, 0.33f, scrimUpperBoundFromSplit)
-                            : LINEAR);
-            config.setInterpolator(ANIM_WORKSPACE_SCALE, DECELERATE);
-            config.setInterpolator(ANIM_WORKSPACE_FADE, ACCELERATE);
+                            : SamsungAnimationSpec.RETURN_INTERPOLATOR);
+            config.setInterpolator(ANIM_WORKSPACE_SCALE, SamsungAnimationSpec.WORKSPACE_SCALE_INTERPOLATOR);
+            config.setInterpolator(ANIM_WORKSPACE_FADE, SamsungAnimationSpec.ALPHA_FADE_INTERPOLATOR);
 
             if (DisplayController.getNavigationMode(mContainer).hasGestures
                     && overview.hasTaskViews()) {
@@ -146,13 +148,13 @@ public class QuickstepAtomicAnimationFactory extends
                     config.duration = Math.min(
                             config.duration,
                             QuickstepTransitionManager.getTaskbarToHomeDuration(
-                                    isPinnedTaskbarAndNotInDesktopMode));
+                                     isPinnedTaskbarAndNotInDesktopMode));
                 }
                 overview.snapToPage(DEFAULT_PAGE, Math.toIntExact(config.duration));
             } else {
-                config.setInterpolator(ANIM_OVERVIEW_TRANSLATE_X, ACCELERATE_DECELERATE);
-                config.setInterpolator(ANIM_OVERVIEW_SCALE, clampToProgress(ACCELERATE, 0, 0.9f));
-                config.setInterpolator(ANIM_OVERVIEW_FADE, DECELERATE_1_7);
+                config.setInterpolator(ANIM_OVERVIEW_TRANSLATE_X, SamsungAnimationSpec.RETURN_INTERPOLATOR);
+                config.setInterpolator(ANIM_OVERVIEW_SCALE, clampToProgress(SamsungAnimationSpec.WORKSPACE_SCALE_INTERPOLATOR, 0, 0.9f));
+                config.setInterpolator(ANIM_OVERVIEW_FADE, SamsungAnimationSpec.ALPHA_FADE_INTERPOLATOR);
             }
 
             Workspace<?> workspace = mContainer.getWorkspace();
@@ -176,36 +178,31 @@ public class QuickstepAtomicAnimationFactory extends
             }
         } else if ((fromState == NORMAL || fromState == HINT_STATE
                 || fromState == HINT_STATE_TWO_BUTTON) && toState == OVERVIEW) {
-            if (DisplayController.getNavigationMode(mContainer).hasGestures) {
-                config.setInterpolator(ANIM_WORKSPACE_SCALE,
-                        fromState == NORMAL ? ACCELERATE : OVERSHOOT_1_2);
-                config.setInterpolator(ANIM_WORKSPACE_TRANSLATE, ACCELERATE);
+            config.setInterpolator(ANIM_WORKSPACE_SCALE, SamsungAnimationSpec.WORKSPACE_SCALE_INTERPOLATOR);
+            config.setInterpolator(ANIM_WORKSPACE_TRANSLATE, SamsungAnimationSpec.RETURN_INTERPOLATOR);
 
+            if (DisplayController.getNavigationMode(mContainer).hasGestures) {
                 // Scrolling in tasks, so show straight away
                 if (overview.hasTaskViews()) {
                     config.setInterpolator(ANIM_OVERVIEW_FADE, INSTANT);
                 } else {
-                    config.setInterpolator(ANIM_OVERVIEW_FADE, OVERSHOOT_1_2);
+                    config.setInterpolator(ANIM_OVERVIEW_FADE, SamsungAnimationSpec.RETURN_INTERPOLATOR);
                 }
             } else {
-                config.setInterpolator(ANIM_WORKSPACE_SCALE, OVERSHOOT_1_2);
-                config.setInterpolator(ANIM_OVERVIEW_FADE, OVERSHOOT_1_2);
+                config.setInterpolator(ANIM_OVERVIEW_FADE, SamsungAnimationSpec.RETURN_INTERPOLATOR);
 
                 // Scale up the recents, if it is not coming from the side
                 if (overview.getVisibility() != VISIBLE || overview.getContentAlpha() == 0) {
                     RECENTS_SCALE_PROPERTY.set(overview, RECENTS_PREPARE_SCALE);
                 }
             }
-            config.setInterpolator(ANIM_WORKSPACE_FADE, OVERSHOOT_1_2);
-            config.setInterpolator(ANIM_ALL_APPS_FADE, OVERSHOOT_1_2);
-            config.setInterpolator(ANIM_OVERVIEW_SCALE, OVERSHOOT_1_2);
-            config.setInterpolator(ANIM_DEPTH, OVERSHOOT_1_2);
-            config.setInterpolator(ANIM_SCRIM_FADE, t -> {
-                // Animate at the same rate until reaching progress 1, and skip the overshoot.
-                return Math.min(1, OVERSHOOT_1_2.getInterpolation(t));
-            });
-            config.setInterpolator(ANIM_OVERVIEW_TRANSLATE_X, OVERSHOOT_1_2);
-            config.setInterpolator(ANIM_OVERVIEW_TRANSLATE_Y, OVERSHOOT_1_2);
+            config.setInterpolator(ANIM_WORKSPACE_FADE, SamsungAnimationSpec.ALPHA_FADE_INTERPOLATOR);
+            config.setInterpolator(ANIM_ALL_APPS_FADE, SamsungAnimationSpec.ALPHA_FADE_INTERPOLATOR);
+            config.setInterpolator(ANIM_OVERVIEW_SCALE, SamsungAnimationSpec.WORKSPACE_SCALE_INTERPOLATOR);
+            config.setInterpolator(ANIM_DEPTH, SamsungAnimationSpec.RETURN_INTERPOLATOR);
+            config.setInterpolator(ANIM_SCRIM_FADE, SamsungAnimationSpec.RETURN_INTERPOLATOR);
+            config.setInterpolator(ANIM_OVERVIEW_TRANSLATE_X, SamsungAnimationSpec.RETURN_INTERPOLATOR);
+            config.setInterpolator(ANIM_OVERVIEW_TRANSLATE_Y, SamsungAnimationSpec.RETURN_INTERPOLATOR);
         } else if (fromState == HINT_STATE && toState == NORMAL) {
             config.setInterpolator(ANIM_DEPTH, DECELERATE_3);
             if (mHintToNormalDuration == -1) {

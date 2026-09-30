@@ -16,8 +16,25 @@ class SamsungAnimationEngineTest {
         assertEquals(380L, SamsungAnimationSpec.LAUNCH_DURATION_MS)
         assertEquals(320L, SamsungAnimationSpec.RETURN_DURATION_MS)
         assertEquals(280L, SamsungAnimationSpec.RECENTS_DURATION_MS)
+        assertEquals(320L, SamsungAnimationSpec.DURATION_OVERVIEW_SLIDE_IN_MS)
+        assertEquals(280L, SamsungAnimationSpec.DURATION_OVERVIEW_EXIT_MS)
+        assertEquals(0.92f, SamsungAnimationSpec.OVERVIEW_WORKSPACE_SCALE, 0.001f)
+        assertEquals(0.40f, SamsungAnimationSpec.OVERVIEW_PARALLAX_FACTOR, 0.001f)
         assertEquals(300.0f, SamsungAnimationSpec.SPRING_STIFFNESS, 0.001f)
         assertEquals(0.86f, SamsungAnimationSpec.SPRING_DAMPING_RATIO, 0.001f)
+    }
+
+    @Test
+    fun testWorkspaceScaleAndAlphaInterpolators() {
+        val workspaceScaleInterpolator = SamsungAnimationSpec.WORKSPACE_SCALE_INTERPOLATOR
+        assertNotNull(workspaceScaleInterpolator)
+        assertEquals(0.0f, workspaceScaleInterpolator.getInterpolation(0.0f), 0.001f)
+        assertEquals(1.0f, workspaceScaleInterpolator.getInterpolation(1.0f), 0.001f)
+
+        val alphaFadeInterpolator = SamsungAnimationSpec.ALPHA_FADE_INTERPOLATOR
+        assertNotNull(alphaFadeInterpolator)
+        assertEquals(0.0f, alphaFadeInterpolator.getInterpolation(0.0f), 0.001f)
+        assertEquals(1.0f, alphaFadeInterpolator.getInterpolation(1.0f), 0.001f)
     }
 
     @Test
