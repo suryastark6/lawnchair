@@ -156,6 +156,19 @@ class LawnchairLauncher : QuickstepLauncher() {
         }
     }
 
+    private val samsungOverviewStateListener = object : StateManager.StateListener<LauncherState> {
+        override fun onStateTransitionStart(toState: LauncherState) {
+            if (toState is OverviewState) {
+                samsungTransitionEngine.onOverviewTransitionStart()
+            }
+        }
+        override fun onStateTransitionComplete(finalState: LauncherState) {
+            if (finalState == LauncherState.NORMAL) {
+                samsungTransitionEngine.onNormalStateEntered()
+            }
+        }
+    }
+
     private lateinit var colorScheme: ColorScheme
     private var hasBackGesture = false
 
@@ -171,6 +184,7 @@ class LawnchairLauncher : QuickstepLauncher() {
             defaultOverlay.setEnableFeed(enable)
         }.launchIn(scope = lifecycleScope)
         launcher.stateManager.addStateListener(clearSearchStateListener)
+        launcher.stateManager.addStateListener(samsungOverviewStateListener)
 
         if (prefs.autoLaunchRoot.get()) {
             lifecycleScope.launch {
@@ -491,6 +505,7 @@ class LawnchairLauncher : QuickstepLauncher() {
 
     override fun onResume() {
         super.onResume()
+        samsungTransitionEngine.onResume()
         restartIfPending()
         refreshPredictionContainersFromModel()
 

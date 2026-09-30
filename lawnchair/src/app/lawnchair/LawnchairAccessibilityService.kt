@@ -56,8 +56,12 @@ class LawnchairAccessibilityService : AccessibilityService() {
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 val launcherPackage = packageName
-                val isToLauncher = currentPackage == launcherPackage
-                val isFromExternal = lastPackageName != null && lastPackageName != launcherPackage
+                val isToLauncher = currentPackage == launcherPackage ||
+                    currentPackage.startsWith("app.lawnchair") ||
+                    currentPackage == "com.android.launcher3"
+                val isFromExternal = lastPackageName != null &&
+                    !lastPackageName.toString().startsWith("app.lawnchair") &&
+                    lastPackageName != "com.android.launcher3"
 
                 if (isToLauncher && isFromExternal) {
                     Log.d(TAG, "Real-time window transition to launcher detected from: $lastPackageName")

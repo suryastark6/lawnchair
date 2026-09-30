@@ -75,7 +75,7 @@ class SamsungLaunchAnimationController(private val launcher: LawnchairLauncher) 
             "[LAUNCH START] Origin: ${startScreenBounds.toShortString()} [w=$iconWidth, h=$iconHeight] | Target: ${targetScreenBounds.toShortString()}",
         )
 
-        // Visual spring feedback on icon
+        // Visual spring feedback on icon and workspace depth layer zoom
         source.animate()
             .scaleX(0.88f)
             .scaleY(0.88f)
@@ -89,6 +89,16 @@ class SamsungLaunchAnimationController(private val launcher: LawnchairLauncher) 
                     .start()
             }
             .start()
+
+        launcher.workspace?.let { ws ->
+            ws.animate()
+                .scaleX(0.94f)
+                .scaleY(0.94f)
+                .alpha(0.80f)
+                .setDuration(300)
+                .setInterpolator(SamsungAnimationSpec.LAUNCH_INTERPOLATOR)
+                .start()
+        }
 
         // High-precision frame-by-frame animation tracking
         var frameIndex = 0
@@ -127,7 +137,7 @@ class SamsungLaunchAnimationController(private val launcher: LawnchairLauncher) 
         frameAnimator.start()
 
         val options = Utilities.allowBGLaunch(
-            ActivityOptions.makeScaleUpAnimation(
+            ActivityOptions.makeClipRevealAnimation(
                 source,
                 iconLeft,
                 iconTop,

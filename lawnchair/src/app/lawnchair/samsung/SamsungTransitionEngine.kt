@@ -16,6 +16,7 @@ class SamsungTransitionEngine(private val launcher: LawnchairLauncher) {
     val capabilities: SamsungTransitionCapabilities = SamsungTransitionCapabilities
     val launchController by lazy { SamsungLaunchAnimationController(launcher) }
     val returnController by lazy { SamsungReturnAnimationController(launcher) }
+    private var isAppRunning = false
 
     init {
         activeEngine = WeakReference(this)
@@ -32,6 +33,7 @@ class SamsungTransitionEngine(private val launcher: LawnchairLauncher) {
      */
     fun getActivityLaunchOptions(v: View?, item: ItemInfo?): ActivityOptionsWrapper? {
         if (!isEnabled) return null
+        isAppRunning = true
         return launchController.createLaunchOptions(v, item)
     }
 
@@ -44,10 +46,48 @@ class SamsungTransitionEngine(private val launcher: LawnchairLauncher) {
     }
 
     /**
+     * Invoked when launcher activity resumes.
+     */
+    fun onResume() {
+        if (isAppRunning) {
+            isAppRunning = false
+            onHomeReturn(null)
+        }
+    }
+
+    /**
      * Dispatches real-time home return animation.
      */
     fun onHomeReturn(fromPackage: CharSequence?) {
         returnController.playHomeReturnAnimation(fromPackage)
+    }
+
+    /**
+     * Coordinates overview recents entrance physics.
+     */
+    fun onOverviewTransitionStart() {
+        val workspace = launcher.workspace ?: return
+        workspace.animate()
+            .scaleX(SamsungAnimationSpec.OVERVIEW_WORKSPACE_SCALE)
+            .scaleY(SamsungAnimationSpec.OVERVIEW_WORKSPACE_SCALE)
+            .setDuration(SamsungAnimationSpec.DURATION_OVERVIEW_SLIDE_IN_MS)
+            .setInterpolator(SamsungAnimationSpec.LAUNCH_INTERPOLATOR)
+            .start()
+    }
+
+    /**
+     * Coordinates returning from overview to normal workspace.
+     */
+    fun onNormalStateEntered() {
+        val workspace = launcher.workspace ?: return
+        if (workspace.scaleX != 1.0f || workspace.scaleY != 1.0f) {
+            workspace.animate()
+                .scaleX(1.0f)
+                .scaleY(1.0f)
+                .setDuration(SamsungAnimationSpec.DURATION_OVERVIEW_EXIT_MS)
+                .setInterpolator(SamsungAnimationSpec.RETURN_INTERPOLATOR)
+                .start()
+        }
     }
 
     companion object {
